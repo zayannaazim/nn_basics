@@ -80,16 +80,30 @@ class Neuron:
         result = sum_param.tanh()
         return result
 
-x=Neuron(3)
-res = x.forward([1,2,3])
+class Layer:
+    def __init__(self,neurons,inputs):
+        self.neurons=[]
+        for i in range(neurons):
+            self.neurons.append(Neuron(inputs))
+    def forward(self,inputs):
+        if len(self.neurons[0].weights)!=len(inputs):
+                    print("No of inputs not correct.")
+                    raise ValueError
+        result=[]
+        for i in self.neurons:
+            result.append(i.forward(inputs.copy()))
+        return result
 
-topo = res.build_topo()
 
-for i in x.weights:
-    print(i.grad,end=" ")
+layer = Layer(3, 4)
+outputs = layer.forward([1, 2, 3, 4])
+print([_.data for _ in outputs])
 
-print("gradient before:",res.grad)
-res.backward()
-print("data after:",res.grad)
-for i in x.weights:
-    print(i.grad,end=" ")
+cumulative=0
+for i in outputs:
+    cumulative=i+cumulative
+cumulative.backward()
+neurons=[_.weights for _ in layer.neurons]
+for i in neurons:
+    print(i)
+print([_.bias.data for _ in layer.neurons])
