@@ -27,21 +27,40 @@ class Value:
         return out
 
     def tanh(self):
-        res= tanh(self.data)
+        res= float(tanh(self.data))
         out = Value(res,prev=(self,))
         def backward():
             diff = 1-out.data**2
             self.grad+=diff*out.grad
         out._backward=backward
         return out
+    
+    def build_topo(self):
+        visited_nodes=set()
+        node_order=[]
+        def recurse_nodes(node):
+            if node not in visited_nodes:
+                visited_nodes.add(node)
+                for parent in node._prev:
+                    recurse_nodes(parent)
+                node_order.append(node)
+        recurse_nodes(self)
+        return node_order
+    
+    def backward(self):
+        self.grad=1
+        nodes=self.build_topo()[::-1]
+        for i in nodes:
+            i._backward()
+    def zero_grad(self):
+        nodes =self.build_topo()
+        for i in nodes:
+            i.grad=0
 
 
 x=Value(2)
-y=Value(3)
-z=x*y
-w=x.tanh()
-w.grad=3
-z.grad=3
-z._backward()
-w._backward()
-print(x.grad,y.grad)
+y=Value(13)
+z=(((x+y).tanh()*x)*y)+(x*x).tanh()
+z.backward()
+print(x.grad)
+print(y.grad)
