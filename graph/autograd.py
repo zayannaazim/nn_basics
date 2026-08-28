@@ -1,6 +1,4 @@
 from numpy import tanh
-from numpy.random import uniform
-
 class Value:
     def __init__(self,d,prev=()):
         self.data=d
@@ -15,6 +13,18 @@ class Value:
         def backwards():
             for i in out._prev:
                 i.grad+=out.grad
+        out._backward=backwards
+        return out
+
+    def __sub__(self,other):
+        if not isinstance(other,Value):
+            other = Value(other)
+        out = Value(self.data-other.data,prev=(self,other))
+        def backwards():
+            k=1
+            for i in out._prev:
+                i.grad+=k*out.grad
+                k*=-1
         out._backward=backwards
         return out
 
@@ -60,36 +70,10 @@ class Value:
             i.grad=0
 
 
-class Neuron:
-    def __init__(self,n):
-        self.weights=[]
-        for i in range(n):
-            self.weights.append(Value(uniform(low=-1,high=1)))
-        self.bias = Value(uniform(low=-1,high=1))
-    def forward(self,inputs):
-        if len(self.weights)!=len(inputs):
-            print("No of inputs not correct.")
-            raise ValueError
-        for i in range(len(inputs)):
-            if not isinstance(inputs[i],Value):
-                inputs[i]=Value(inputs[i])
-        sum_param=0
-        for i in range(len(inputs)):
-            sum_param=(self.weights[i]*inputs[i])+sum_param
-        sum_param+=self.bias
-        result = sum_param.tanh()
-        return result
-
-x=Neuron(3)
-res = x.forward([1,2,3])
-
-topo = res.build_topo()
-
-for i in x.weights:
-    print(i.grad,end=" ")
-
-print("gradient before:",res.grad)
-res.backward()
-print("data after:",res.grad)
-for i in x.weights:
-    print(i.grad,end=" ")
+# x=Value(2)
+# y=Value(13)
+# z=x-y
+# z.backward()
+# print(z.data)
+# print(x.grad)
+# print(y.grad)
